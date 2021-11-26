@@ -1,44 +1,76 @@
+setwd("C:\\Users\\Marko\\Documents\\GitHub\\ai-heating-consumption")
 setwd("D:\\ai-heating-consumption")
 
 train <- read.csv("ucnaSem1.txt", stringsAsFactors = T)
 test <- read.csv("testnaSem1.txt", stringsAsFactors = T)
 
+##############################
+#     Priprava podatkov      #
+##############################
+
 # install.packages("lubridate")
 library(lubridate)
 
-IS_WEEKEND <- function(d) {
-    week_day <- wday(d)
-    ifelse(week_day == 1 | week_day == 7, 1, 0)
-}
-
-GET_SEASON <- function(d) {
-    numeric_date <- 100 * month(d) + day(d)
-    cuts <- base::cut(numeric_date, breaks = c(0,319,0620,0921,1220,1231))
-    levels(cuts) <- c("Winter","Spring","Summer","Fall","Winter")
-    cuts
+getSeason <- function(DATES) {
+    WS <- as.Date("2012-12-15", format = "%Y-%m-%d") # Winter Solstice
+    SE <- as.Date("2012-3-15",  format = "%Y-%m-%d") # Spring Equinox
+    SS <- as.Date("2012-6-15",  format = "%Y-%m-%d") # Summer Solstice
+    FE <- as.Date("2012-9-15",  format = "%Y-%m-%d") # Fall Equinox
+    
+    # Convert dates from any year to 2012 dates
+    d <- as.Date(strftime(DATES, format="2012-%m-%d"))
+    
+    ifelse (d >= WS | d < SE, "Winter",
+            ifelse (d >= SE & d < SS, "Spring",
+                    ifelse (d >= SS & d < FE, "Summer", "Fall")))
 }
 
 ADD_COLUMNS <- function(t) {
-    dates <- t$datum
-    weeked_rows <- c()
-    season_rows <- c()
-    i <- 1
-    for (d in dates) {
-        weeked_rows[i] <- IS_WEEKEND(d)
-        season_rows[i] <- GET_SEASON(d)
-        i <- i + 1
-    }
-
-    t$is_weekend <- weeked_rows
-    t$season <- season_rows
-    t$stavba <- NULL
+    # dodan atribut ce je vikend
+    t$is_weekend <- wday(t$datum, week_start = 1) > 5
+    
+    # dodan atribut, kateri season je
+    t$season <- getSeason(t$datum)
+    t$season <- as.factor(t$season)
+    
+    # sprememba prsenja z -1 na 1mm (privzeta vrednost)
     t$padavine[t$padavine == -1] <- 1
+    
     t
 }
 
+train
+
 train <- ADD_COLUMNS(train)
 test <- ADD_COLUMNS(test)
+
+summary(train)
+summary(test)
+
+
+#ADD_COLUMNS <- function(t) {
+#    dates <- t$datum
+#    weeked_rows <- c()
+#    season_rows <- c()
+#    i <- 1
+#    for (d in dates) {
+#        weeked_rows[i] <- IS_WEEKEND(d)
+#        season_rows[i] <- GET_SEASON(d)
+#        i <- i + 1
+#    }
+#
+#    t$is_weekend <- weeked_rows
+#    t$season <- season_rows
+#    t$stavba <- NULL
+#    t$padavine[t$padavine == -1] <- 1
+#    t
+#}
+
+#train <- ADD_COLUMNS(train)
+#test <- ADD_COLUMNS(test)
 #summary(train)
+
+
 
 library(CORElearn)
 sort(attrEval(namembnost ~ ., train, "InfGain"), decreasing = TRUE)
