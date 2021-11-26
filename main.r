@@ -1,6 +1,9 @@
 setwd("C:\\Users\\Marko\\Documents\\GitHub\\ai-heating-consumption")
 setwd("D:\\ai-heating-consumption")
 
+# pogosto uporabljene funkcije
+source("common.r") 
+
 train <- read.csv("ucnaSem1.txt", stringsAsFactors = T)
 test <- read.csv("testnaSem1.txt", stringsAsFactors = T)
 
@@ -64,24 +67,52 @@ plot(train$povrsina, train$poraba) # poraba je pričakovano višja glede na povr
 plot(train$namembnost, train$regija) # pregled stavb po namembnosti glede na regijo
 plot(train$namembnost, train$poraba) # kako namembnost vpliva na porabo
 
-library(CORElearn)
-sort(attrEval(namembnost ~ ., train, "InfGain"), decreasing = TRUE)
+#library(CORElearn)
+#sort(attrEval(namembnost ~ ., train, "InfGain"), decreasing = TRUE)
+#
+#set.seed(0)
+#library(rpart)
+#dt <- rpart(regija ~ ., data = train)
+#
+#library(rpart.plot)
+#rpart.plot(dt)
+#
+#observed <- test$regija
+#predicted <- predict(dt, test, type = "class")
+#
+#tab <- table(observed, predicted)
+#
+#CA(observed, predicted)
+
+
+##############################
+#  Klasifikacijski problem   #
+##############################
 
 set.seed(0)
-library(rpart)
-dt <- rpart(regija ~ ., data = train)
+library(CORElearn)
 
-library(rpart.plot)
-rpart.plot(dt)
+# Glasovanje
+modelDT <- CoreModel(namembnost ~ ., train, model="tree")
+modelNB <- CoreModel(namembnost ~ ., train, model="bayes")
+#modelKNN <- CoreModel(namembnost ~ ., train, model="knn", kInNN = 3)
 
-observed <- test$regija
-predicted <- predict(dt, test, type = "class")
+predDT <- predict(modelDT, test, type = "class")
+caDT <- CA(test$namembnost, predDT)
+caDT
 
-tab <- table(observed, predicted)
+predNB <- predict(modelNB, test, type="class")
+caNB <- CA(test$namembnost, predNB)
+caNB
 
-CA <- function(obs, pred) {
-	tab <- table(obs, pred)
-	sum(diag(tab)) / sum(tab)
-}
+#predKNN <- predict(modelKNN, test, type="class")
+#caKNN <- CA(test$namembnost, predKNN)
+#caKNN
 
-CA(observed, predicted)
+# predikcije modelov
+pred <- data.frame(predDT, predNB)
+head(pred)
+
+predNamembnost <- voting(pred)
+predicted <- factor(predNamembnost, levels=levels(train$namembnost))
+CA(test$namembnost, predicted)
