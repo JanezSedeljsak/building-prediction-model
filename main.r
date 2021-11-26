@@ -36,6 +36,13 @@ ADD_COLUMNS <- function(t) {
     # sprememba prsenja z -1 na 1mm (privzeta vrednost)
     t$padavine[t$padavine == -1] <- 1
     
+    # odstranjen datum (ima index 1)
+    t[-1]
+    
+    # oblacnost je faktor
+    t$oblacnost <- as.factor(t$oblacnost)
+    
+    # (return)
     t
 }
 
@@ -48,27 +55,10 @@ summary(train)
 summary(test)
 
 
-#ADD_COLUMNS <- function(t) {
-#    dates <- t$datum
-#    weeked_rows <- c()
-#    season_rows <- c()
-#    i <- 1
-#    for (d in dates) {
-#        weeked_rows[i] <- IS_WEEKEND(d)
-#        season_rows[i] <- GET_SEASON(d)
-#        i <- i + 1
-#    }
-#
-#    t$is_weekend <- weeked_rows
-#    t$season <- season_rows
-#    t$stavba <- NULL
-#    t$padavine[t$padavine == -1] <- 1
-#    t
-#}
 
-#train <- ADD_COLUMNS(train)
-#test <- ADD_COLUMNS(test)
-#summary(train)
+#########################
+
+
 
 
 
