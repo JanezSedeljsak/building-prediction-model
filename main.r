@@ -31,7 +31,7 @@ ADD_COLUMNS <- function(t) {
     
     # dodan atribut, kateri season je
     t$season <- getSeason(t$datum)
-    t$season <- as.factor(t$season)
+    t$season <- factor(t$season, levels=c("Winter", "Spring", "Summer", "Fall"))
     
     # sprememba prsenja z -1 na 1mm (privzeta vrednost)
     t$padavine[t$padavine == -1] <- 1
@@ -40,7 +40,7 @@ ADD_COLUMNS <- function(t) {
     t[-1]
     
     # oblacnost je faktor
-    t$oblacnost <- as.factor(t$oblacnost)
+    t$oblacnost <- factor(t$oblacnost, levels=seq(1,10,1))
     
     # (return)
     t
@@ -55,12 +55,14 @@ summary(train)
 summary(test)
 
 
+##############################
+#   Vizualizacija podatkov   #
+##############################
 
-#########################
-
-
-
-
+plot(train$temp_zraka, train$poraba) # temperature nima bistvenega vpliva na porabo
+plot(train$povrsina, train$poraba) # poraba je pričakovano višja glede na povrsino
+plot(train$namembnost, train$regija) # pregled stavb po namembnosti glede na regijo
+plot(train$namembnost, train$poraba) # kako namembnost vpliva na porabo
 
 library(CORElearn)
 sort(attrEval(namembnost ~ ., train, "InfGain"), decreasing = TRUE)
