@@ -29,14 +29,19 @@ ADD_COLUMNS <- function(t) {
         i <- i + 1
     }
 
-    t$is_weekend = weeked_rows
-    t$season = season_rows
+    t$is_weekend <- weeked_rows
+    t$season <- season_rows
+    t$stavba <- NULL
+    t$padavine[t$padavine == -1] <- 1
     t
 }
 
 train <- ADD_COLUMNS(train)
 test <- ADD_COLUMNS(test)
 #summary(train)
+
+library(CORElearn)
+sort(attrEval(namembnost ~ ., train, "InfGain"), decreasing = TRUE)
 
 set.seed(0)
 library(rpart)
