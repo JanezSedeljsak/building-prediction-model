@@ -43,7 +43,7 @@ ADD_COLUMNS <- function(t) {
     t[-1]
     
     # oblacnost je faktor
-    t$oblacnost <- factor(t$oblacnost, levels=seq(1,10,1))
+    t$oblacnost <- factor(t$oblacnost, levels=seq(0,10,1))
     
     # (return)
     t
@@ -58,12 +58,24 @@ summary(train)
 summary(test)
 
 
+
+# Racuannje avg iz prejsnjih datumov
+for (date in unique(train$datum)) {
+    dateLast <- as.Date(date)
+    dateFirst <- dateLast - 7
+    avgPoraba <- mean(train[as.Date(train$datum) > dateFirst & as.Date(train$datum) < dateLast, "poraba"])
+    train$prejsnjaPoraba[train$datum == date] <- avgPoraba
+}
+
+train$prejsnjaPoraba
+
+
 ##############################
 #   Vizualizacija podatkov   #
 ##############################
 
 plot(train$temp_zraka, train$poraba) # temperature nima bistvenega vpliva na porabo
-plot(train$povrsina, train$poraba) # poraba je pričakovano višja glede na povrsino
+plot(train$povrsina, train$poraba) # poraba je pricakovano visja glede na povrsino
 plot(train$namembnost, train$regija) # pregled stavb po namembnosti glede na regijo
 plot(train$namembnost, train$poraba) # kako namembnost vpliva na porabo
 
