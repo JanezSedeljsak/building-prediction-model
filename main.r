@@ -67,6 +67,16 @@ for (date in unique(train$datum)) {
     train$prejsnjaPoraba[train$datum == date] <- avgPoraba
 }
 
+for (date in unique(test$datum)) {
+    dateLast <- as.Date(date)
+    dateFirst <- dateLast - 7
+    avgPoraba <- mean(test[as.Date(test$datum) > dateFirst & as.Date(test$datum) < dateLast, "poraba"])
+    test$prejsnjaPoraba[test$datum == date] <- avgPoraba
+}
+
+write.table(train,"C:\\Users\\Marko\\Desktop\\train.txt", append = FALSE, sep = ",", dec = ".", row.names = FALSE, col.names = TRUE)
+write.table(test,"C:\\Users\\Marko\\Desktop\\test.txt", append = FALSE, sep = ",", dec = ".", row.names = FALSE, col.names = TRUE)
+
 train$prejsnjaPoraba
 
 
