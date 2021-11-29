@@ -77,6 +77,7 @@ test <- read.csv("test.txt", stringsAsFactors = T)
 factorize <- function (data) {
     data$namembnost <- factor(data$namembnost, levels=c("izobrazevalna", "javno_storitvena", "kulturno_razvedrilna", "poslovna", "stanovanjska"))
     data$season <- factor(data$season, levels=c("Winter", "Spring", "Summer", "Autumn"))
+    data$regija <- as.factor(data$regija)
     data$oblacnost <- factor(data$oblacnost, levels=seq(0,10,1))
     data$is_weekend <- as.factor(data$is_weekend)
     data$prejsnjaPoraba[data$prejsnjaPoraba == -1] <- NA
@@ -96,30 +97,44 @@ train$prejsnjaPoraba
 #   Vizualizacija podatkov   #
 ##############################
 
-plot(train$temp_zraka, train$poraba) # temperature nima bistvenega vpliva na porabo
-plot(train$povrsina, train$poraba) # poraba je pricakovano visja glede na povrsino
-plot(train$namembnost, train$regija) # pregled stavb po namembnosti glede na regijo
-plot(train$namembnost, train$poraba) # kako namembnost vpliva na porabo
-plot(train$poraba, train$prejsnjaPoraba) # zelo lepa povezanost med porabo in prejsnjoPorabo
+library(rpart.plot)
 
+plot(train$temp_zraka, train$poraba, 
+    main="Temp - poraba", sub="temperature nima bistvenega vpliva na porabo",
+    xlab="Temp. zraka (°C)", ylab="Poraba (kWh)")
 
-#library(CORElearn)
-#sort(attrEval(namembnost ~ ., train, "InfGain"), decreasing = TRUE)
-#
-#set.seed(0)
-#library(rpart)
-#dt <- rpart(regija ~ ., data = train)
-#
-#library(rpart.plot)
-#rpart.plot(dt)
-#
-#observed <- test$regija
-#predicted <- predict(dt, test, type = "class")
-#
-#tab <- table(observed, predicted)
-#
-#CA(observed, predicted)
+plot(train$povrsina, train$poraba, 
+    main="Povrsina - Poraba", sub="poraba je pricakovano visja glede na povrsino",
+    xlab="Povrsina (m^2)", ylab="Poraba (kWh)") 
 
+plot(train$namembnost, train$regija, 
+    main="Namembnost - Regija", sub="pregled stavb po namembnosti glede na regijo",
+    xlab="Namembnost", ylab="Regija") 
+
+plot(train$namembnost, train$poraba, 
+    main="Namembnost - Poraba", sub="kako namembnost vpliva na porabo",
+    xlab="Povrsina (m^2)", ylab="Poraba (kWh)") 
+
+plot(train$poraba, train$prejsnjaPoraba, 
+    main="Poraba - 7 dnevna poraba", sub="zelo lepa povezanost med porabo in 7 dnevno porabo",
+    xlab="Poraba (kWh)", ylab="7 denvna poraba (kWh)")
+
+hist(train$poraba) # visok delež na začetku, padec z funkcijo f(x)=1/x
+abline(v=mean(train$poraba), col="red") 
+abline(v=median(train$poraba), col="black") # več meritev imamo z podpovp. porabo
+
+barplot(table(train$namembnost)) # vidimo, da imamo pri veliki večini podatkov, "izobrazevalno" namembnost
+barplot(table(train$is_weekend)) # razmerje med vikendi in denvi v tednu se ujema s pričakovanji (vikendov je 2/7)
+abline(h=sum(train$is_weekend == 1)) # 7036
+abline(h=(2/7)*nrow(train), col="red") # 6892.86
+
+pie(table(train$regija)) # porazdelitev regije vzhodna, zahodna je dokaj enakomerna
+pie(table(train$season)) # ponovno dokaj lepa porazdelitev, imamo manjšo prevlado podatkov iz zime
+
+by_year <- table(train$leto_izgradnje)
+by_year_education <- table(train[train$namembnost == "izobrazevalna",]$leto_izgradnje)
+ratio <- cbind(by_year[1], by_year[-1]/by_year_education[-1])
+barplot(by_year_education) # število izgradenj glede na leto
 
 ##############################
 #  Klasifikacijski problem   #
