@@ -123,6 +123,12 @@ plot(train$poraba, train$prejsnjaPoraba)
 #  Klasifikacijski problem   #
 ##############################
 
+# Trivialen model
+max_namembnost <- sort(table(train$namembnost), decreasing=T)[[1]]
+predTrivial <- rep(max_namembnost, nrow(test))
+caTrivial <- CA(test$namembnost, predTrivial)
+caTrivial # 0.47
+
 set.seed(0)
 library(CORElearn)
 
