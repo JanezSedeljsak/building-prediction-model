@@ -86,14 +86,14 @@ public class Parse {
             int rain = Integer.parseInt(curLine[9]);
             if (rain == -1) rain = 1;
 
-            if (sevenDayAvg == null) continue;
+            //if (sevenDayAvg == null) continue;
             writer.write(String.format(
                 "\n%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,\"%s\",%s",
                 curLine[1],curLine[2],curLine[3],curLine[4],curLine[5],curLine[6],
                 curLine[7],curLine[8],rain,curLine[10],curLine[11],curLine[12],curLine[13],
                 isWeekend ? "1" : "0", 
                 season, 
-                sevenDayAvg
+                sevenDayAvg != null ? sevenDayAvg : -1
             ));
         }
         

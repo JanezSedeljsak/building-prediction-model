@@ -78,6 +78,7 @@ factorize <- function (data) {
     data$season <- factor(data$season, levels=c("Winter", "Spring", "Summer", "Autumn"))
     data$oblacnost <- factor(data$oblacnost, levels=seq(0,10,1))
     data$is_weekend <- as.factor(data$is_weekend)
+    data$prejsnjaPoraba[data$prejsnjaPoraba == -1] <- NA
     data
 }
 
@@ -129,7 +130,7 @@ library(CORElearn)
 modelDT <- CoreModel(namembnost ~ ., train, model="tree") # 0.45
 #modelNB <- CoreModel(namembnost ~ ., train, model="bayes") # 0.35
 modelKNN <- CoreModel(namembnost ~ ., train, model="knn", kInNN = 5) # 0.56
-modelRT <- CoreModel(namembnost ~ ., train, model="regTree")
+#modelRT <- CoreModel(namembnost ~ ., train, model="regTree")
 modelRF <- CoreModel(namembnost ~ ., train, model="rf")
 #modelRFN <- CoreModel(namembnost ~ ., train, model="rfNear")
 
@@ -149,9 +150,9 @@ predRT <- predict(modelRT, test, type="class")
 caRT <- CA(test$namembnost, predRT)
 caRT
 
-predRF <- predict(modelRF, test, type="class")
-caRF <- CA(test$namembnost, predRF)
-caRF
+#predRF <- predict(modelRF, test, type="class")
+#caRF <- CA(test$namembnost, predRF)
+#caRF
 
 #predRFN <- predict(modelRFN, test, type="class")
 #caRFN <- CA(test$namembnost, predRFN)
