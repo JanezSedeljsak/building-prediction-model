@@ -75,6 +75,7 @@ test <- read.csv("test.txt", stringsAsFactors = T)
 #write.table(test,"C:\\Users\\Marko\\Desktop\\test.txt", append = FALSE, sep = ",", dec = ".", row.names = FALSE, col.names = TRUE)
 
 factorize <- function (data) {
+    data$namembnost <- factor(data$namembnost, levels=c("izobrazevalna", "javno_storitvena", "kulturno_razvedrilna", "poslovna", "stanovanjska"))
     data$season <- factor(data$season, levels=c("Winter", "Spring", "Summer", "Autumn"))
     data$oblacnost <- factor(data$oblacnost, levels=seq(0,10,1))
     data$is_weekend <- as.factor(data$is_weekend)
@@ -99,7 +100,8 @@ plot(train$temp_zraka, train$poraba) # temperature nima bistvenega vpliva na por
 plot(train$povrsina, train$poraba) # poraba je pricakovano visja glede na povrsino
 plot(train$namembnost, train$regija) # pregled stavb po namembnosti glede na regijo
 plot(train$namembnost, train$poraba) # kako namembnost vpliva na porabo
-plot(train$poraba, train$prejsnjaPoraba)
+plot(train$poraba, train$prejsnjaPoraba) # zelo lepa povezanost med porabo in prejsnjoPorabo
+
 
 #library(CORElearn)
 #sort(attrEval(namembnost ~ ., train, "InfGain"), decreasing = TRUE)
@@ -152,13 +154,13 @@ predKNN <- predict(modelKNN, test, type="class")
 caKNN <- CA(test$namembnost, predKNN)
 caKNN
 
-predRT <- predict(modelRT, test, type="class")
-caRT <- CA(test$namembnost, predRT)
-caRT
+#predRT <- predict(modelRT, test, type="class")
+#caRT <- CA(test$namembnost, predRT)
+#caRT
 
-#predRF <- predict(modelRF, test, type="class")
-#caRF <- CA(test$namembnost, predRF)
-#caRF
+predRF <- predict(modelRF, test, type="class")
+caRF <- CA(test$namembnost, predRF)
+caRF
 
 #predRFN <- predict(modelRFN, test, type="class")
 #caRFN <- CA(test$namembnost, predRFN)
