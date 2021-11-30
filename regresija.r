@@ -26,15 +26,6 @@ source("common.r")
 
 summary(train)
 
-hist(log1p(train$povrsina))
-hist(train$temp_zraka)
-hist(train$temp_rosisca)
-hist(train$padavine)
-hist(train$pritisk)
-hist(log1p(train$hitrost_vetra))
-hist(log1p(train$poraba))
-hist(train$prejsnjaPoraba)
-
 # Vsi atributi pred obdelavo
 set.seed(0)
 model <- lm(poraba ~ ., train)
