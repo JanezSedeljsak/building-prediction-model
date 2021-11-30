@@ -24,19 +24,23 @@ library(CORElearn)
 modelDT <- CoreModel(namembnost ~ ., train, model="tree") # 0.45
 modelKNN <- CoreModel(namembnost ~ ., train, model="knn", kInNN = 5) # 0.56
 modelRF <- CoreModel(namembnost ~ ., train, model="rf")
-#modelNB <- CoreModel(namembnost ~ ., train, model="bayes") # 0.35
+modelNB <- CoreModel(namembnost ~ ., train, model="bayes") # 0.35
 #modelKNN6 <- CoreModel(namembnost ~ ., train, model="knn", kInNN = 6)
 #modelKNN4 <- CoreModel(namembnost ~ ., train, model="knn", kInNN = 4)
 #modelRT <- CoreModel(namembnost ~ ., train, model="regTree")
 #modelRFN <- CoreModel(namembnost ~ ., train, model="rfNear")
 
-predDT <- predict(modelDT, test, type = "class")
+predNB <- predict(modelNB, test, type="class")
+caNB <- CA(test$namembnost, predNB)
+caNB # 0.4448579
+
+predDT <- predict(modelDT, test, type="class")
 caDT <- CA(test$namembnost, predDT)
-caDT # 0.4702341
+caDT # 0.4884197
 
 predRF <- predict(modelRF, test, type="class")
 caRF <- CA(test$namembnost, predRF)
-caRF # 0.5521739
+caRF # 0.5568562
 
 predKNN <- predict(modelKNN, test, type="class")
 caKNN <- CA(test$namembnost, predKNN)
@@ -48,4 +52,15 @@ head(pred)
 
 predNamembnost <- voting(pred)
 predicted <- factor(predNamembnost, levels=levels(train$namembnost))
-CA(test$namembnost, predicted) # 0.5920987
+CA(test$namembnost, predicted) # 0.5903846
+
+# Utezeno glasovanje
+predDT.prob <- predict(modelDT, test, type="prob")
+predRF.prob <- predict(modelRF, test, type="prob")
+predKNN.prob <- predict(modelKNN, test, type="prob")
+predNB.prob <- predict(modelNB, test, type="prob")
+
+pred.prob <- predRF.prob * caRF + predKNN.prob * caKNN
+predClass <- colnames(pred.prob)[max.col(pred.prob)]
+predicted.prob <- factor(predClass, levels(train$namembnost))
+CA(test$namembnost, predicted.prob) # 0.5819398
