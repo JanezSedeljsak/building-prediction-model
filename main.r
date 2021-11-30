@@ -32,11 +32,11 @@ test <- read.csv("test.txt", stringsAsFactors = T)
 #
 #ADD_COLUMNS <- function(t) {
 #    # dodan atribut ce je vikend
-#    t$is_weekend <- wday(t$datum, week_start = 1) > 5
+#    t$vikend <- wday(t$datum, week_start = 1) > 5
 #    
-#    # dodan atribut, kateri season je
-#    t$season <- getSeason(t$datum)
-#    t$season <- factor(t$season, levels=c("Winter", "Spring", "Summer", "Fall"))
+#    # dodan atribut, kateri sezona je
+#    t$sezona <- getSeason(t$datum)
+#    t$sezona <- factor(t$sezona, levels=c("Winter", "Spring", "Summer", "Fall"))
 #    
 #    # sprememba prsenja z -1 na 1mm (privzeta vrednost)
 #    t$padavine[t$padavine == -1] <- 1
@@ -61,14 +61,14 @@ test <- read.csv("test.txt", stringsAsFactors = T)
 #    dateLast <- as.Date(date)
 #    dateFirst <- dateLast - 7
 #    avgPoraba <- mean(train[as.Date(train$datum) > dateFirst & as.Date(train$datum) < dateLast, "poraba"])
-#    train$prejsnjaPoraba[train$datum == date] <- avgPoraba
+#    train$tedenska_poraba[train$datum == date] <- avgPoraba
 #}
 #
 #for (date in unique(test$datum)) {
 #    dateLast <- as.Date(date)
 #    dateFirst <- dateLast - 7
 #    avgPoraba <- mean(test[as.Date(test$datum) > dateFirst & as.Date(test$datum) < dateLast, "poraba"])
-#    test$prejsnjaPoraba[test$datum == date] <- avgPoraba
+#    test$tedenska_poraba[test$datum == date] <- avgPoraba
 #}
 #
 #write.table(train,"C:\\Users\\Marko\\Desktop\\train.txt", append = FALSE, sep = ",", dec = ".", row.names = FALSE, col.names = TRUE)
@@ -76,11 +76,12 @@ test <- read.csv("test.txt", stringsAsFactors = T)
 
 factorize <- function (data) {
     data$namembnost <- factor(data$namembnost, levels=c("izobrazevalna", "javno_storitvena", "kulturno_razvedrilna", "poslovna", "stanovanjska"))
-    data$season <- factor(data$season, levels=c("Winter", "Spring", "Summer", "Autumn"))
+    data$sezona <- factor(data$sezona, levels=c("zima", "spomlad", "poletje", "jesen"))
     data$regija <- as.factor(data$regija)
     data$oblacnost <- factor(data$oblacnost, levels=seq(0,10,1))
-    data$is_weekend <- as.factor(data$is_weekend)
-    data$prejsnjaPoraba[data$prejsnjaPoraba == -1] <- NA
+    data$vikend <- as.factor(data$vikend)
+    data$tedenska_poraba[data$tedenska_poraba == -1] <- NA
+    data$vcerajsnja_poraba[data$vcerajsnja_poraba == -1] <- NA
     data
 }
 
@@ -89,8 +90,6 @@ test <- factorize(test)
 
 summary(train)
 summary(test)
-
-train$prejsnjaPoraba
 
 
 ##############################
@@ -115,26 +114,44 @@ plot(train$namembnost, train$poraba,
     main="Namembnost - Poraba", sub="kako namembnost vpliva na porabo",
     xlab="Povrsina (m^2)", ylab="Poraba (kWh)") 
 
-plot(train$poraba, train$prejsnjaPoraba, 
+plot(train$poraba, train$tedenska_poraba, 
     main="Poraba - 7 dnevna poraba", sub="zelo lepa povezanost med porabo in 7 dnevno porabo",
     xlab="Poraba (kWh)", ylab="7 denvna poraba (kWh)")
 
-hist(train$poraba) # visok delež na začetku, padec z funkcijo f(x)=1/x
-abline(v=mean(train$poraba), col="red") 
-abline(v=median(train$poraba), col="black") # več meritev imamo z podpovp. porabo
+plot(train$poraba, train$vcerajsnja_poraba, 
+    main="Poraba - Vcerajsnja poraba", sub="pridemo do še lepšega linearnega grafa, z nekaj odstopanji",
+    xlab="Poraba (kWh)", ylab="Vcerajsnja poraba (kWh)")
 
-barplot(table(train$namembnost)) # vidimo, da imamo pri veliki večini podatkov, "izobrazevalno" namembnost
-barplot(table(train$is_weekend)) # razmerje med vikendi in denvi v tednu se ujema s pričakovanji (vikendov je 2/7)
-abline(h=sum(train$is_weekend == 1)) # 7036
+hist(train$poraba, 
+    main="Histogram porabe", sub="visok delež na začetku, padec z funkcijo f(x)=1/x. Več meritev ima podpovp. porabo",
+    xlab="Poraba", ylab="Število")
+abline(v=mean(train$poraba), col="red") 
+abline(v=median(train$poraba), col="black")
+
+barplot(table(train$namembnost), 
+    main="Porazdelitev namembnosti", sub="vidimo, da imamo pri veliki večini podatkov, 'izobrazevalno' namembnost",
+    xlab="Namembnost", ylab="Število")
+
+barplot(table(train$vikend), 
+    main="Razmerje delovnih dni in vikendov", sub="razmerje med vikendi in denvi v tednu se ujema s pričakovanji (vikendov je 2/7)",
+    xlab="Je vikend?", ylab="Število")
+abline(h=sum(train$vikend == 1)) # 7036
 abline(h=(2/7)*nrow(train), col="red") # 6892.86
 
-pie(table(train$regija)) # porazdelitev regije vzhodna, zahodna je dokaj enakomerna
-pie(table(train$season)) # ponovno dokaj lepa porazdelitev, imamo manjšo prevlado podatkov iz zime
+pie(table(train$regija), 
+    main="Porazdelitev regiji", sub="opazimo, da je porazdelitev dokaj enakomerna")
 
-by_year <- table(train$leto_izgradnje)
-by_year_education <- table(train[train$namembnost == "izobrazevalna",]$leto_izgradnje)
-ratio <- cbind(by_year[1], by_year[-1]/by_year_education[-1])
-barplot(by_year_education) # število izgradenj glede na leto
+pie(table(train$sezona),
+    main="Porazdelitev sezon", sub="porazdelitev je dokaj enakomerna, imamo manjšo prevlado zime in jeseni")
+
+po_letih <- table(train$leto_izgradnje)
+po_letih_iz <- po_letih
+po_letih_iz[names(po_letih_iz)] <- 0
+tmp <- table(train[train$namembnost == "izobrazevalna",]$leto_izgradnje)
+po_letih_iz[names(tmp)] = tmp
+
+barplot(po_letih)
+barplot(po_letih_iz / po_letih)
 
 ##############################
 #  Klasifikacijski problem   #
@@ -151,38 +168,28 @@ library(CORElearn)
 
 # Glasovanje
 modelDT <- CoreModel(namembnost ~ ., train, model="tree") # 0.45
-#modelNB <- CoreModel(namembnost ~ ., train, model="bayes") # 0.35
 modelKNN <- CoreModel(namembnost ~ ., train, model="knn", kInNN = 5) # 0.56
-#modelRT <- CoreModel(namembnost ~ ., train, model="regTree")
 modelRF <- CoreModel(namembnost ~ ., train, model="rf")
+#modelNB <- CoreModel(namembnost ~ ., train, model="bayes") # 0.35
+#modelKNN6 <- CoreModel(namembnost ~ ., train, model="knn", kInNN = 6)
+#modelKNN4 <- CoreModel(namembnost ~ ., train, model="knn", kInNN = 4)
+#modelRT <- CoreModel(namembnost ~ ., train, model="regTree")
 #modelRFN <- CoreModel(namembnost ~ ., train, model="rfNear")
 
 predDT <- predict(modelDT, test, type = "class")
 caDT <- CA(test$namembnost, predDT)
 caDT
 
-#predNB <- predict(modelNB, test, type="class")
-#caNB <- CA(test$namembnost, predNB)
-#caNB
-
 predKNN <- predict(modelKNN, test, type="class")
 caKNN <- CA(test$namembnost, predKNN)
 caKNN
-
-#predRT <- predict(modelRT, test, type="class")
-#caRT <- CA(test$namembnost, predRT)
-#caRT
 
 predRF <- predict(modelRF, test, type="class")
 caRF <- CA(test$namembnost, predRF)
 caRF
 
-#predRFN <- predict(modelRFN, test, type="class")
-#caRFN <- CA(test$namembnost, predRFN)
-#caRFN
-
 # predikcije modelov
-pred <- data.frame(predDT, predKNN, predRF)
+pred <- data.frame(predRF, predKNN, predDT)
 head(pred)
 
 predNamembnost <- voting(pred)

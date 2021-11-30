@@ -32,20 +32,34 @@ public class Parse {
     static String getSeason(Date d) {
         cal.setTime(d);
         int day = cal.get(Calendar.DAY_OF_YEAR);
-        if (day < 81 || day > 355) return "Winter";
-        if (day < 173) return "Spring";
-        if (day < 267) return "Summer";
-        return "Autumn";
+        if (day < 81 || day > 355) return "zima";
+        if (day < 173) return "spomlad";
+        if (day < 267) return "poletje";
+        return "jesen";
     }
 
-    static Double calcConsumptionAvg(int buildingNum, double currentConsumption, Date d) {
+    static Double[] calcPastConusmption(int buildingNum, double currentConsumption, Date d) {
         ArrayList<ConsumptionOnDate> currentVals;
         if (consumptionHistory.containsKey(buildingNum)) {
             currentVals = consumptionHistory.get(buildingNum);
             currentVals.removeIf(cd -> cd.d.compareTo(d) < 0);
+            if (currentVals.size() == 0) {
+                currentVals.add(new ConsumptionOnDate(d, currentConsumption, cal));
+                return new Double[] {null, null};   
+            }
+
+            ConsumptionOnDate lastRecord = currentVals.get(currentVals.size() - 1);
+            Double yesterday = null;
+            cal.setTime(d);
+            cal.add(Calendar.DATE, 6); // add 6 because of previously added offset
+            if (lastRecord.d.compareTo(cal.getTime()) == 0) {
+                yesterday = lastRecord.c;
+            }
+
+            
             if (currentVals.size() < 4) {
                 currentVals.add(new ConsumptionOnDate(d, currentConsumption, cal));
-                return null;
+                return new Double[] {yesterday, null};
             }
 
             double val = .0;
@@ -56,13 +70,14 @@ public class Parse {
             }
 
             currentVals.add(new ConsumptionOnDate(d, currentConsumption, cal));
-            return amount > 0 ? val / (double)amount : null;
+            Double pastWeek = amount > 0 ? val / (double)amount : null;
+            return new Double[] {yesterday, pastWeek};
         }
         
         currentVals = new ArrayList<>();
         currentVals.add(new ConsumptionOnDate(d, currentConsumption, cal));
         consumptionHistory.put(buildingNum, currentVals);
-        return null;
+        return new Double[] {null, null};
     }
 
     static void readAndWrite(String file, String outFile) throws Exception {
@@ -73,14 +88,14 @@ public class Parse {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
         FileInputStream fis = new FileInputStream(file);
         Scanner sc = new Scanner(fis);
-        writer.write("\"regija\",\"stavba\",\"namembnost\",\"povrsina\",\"leto_izgradnje\",\"temp_zraka\",\"temp_rosisca\",\"oblacnost\",\"padavine\",\"pritisk\",\"smer_vetra\",\"hitrost_vetra\",\"poraba\",\"is_weekend\",\"season\",\"prejsnjaPoraba\"");
+        writer.write("\"regija\",\"stavba\",\"namembnost\",\"povrsina\",\"leto_izgradnje\",\"temp_zraka\",\"temp_rosisca\",\"oblacnost\",\"padavine\",\"pritisk\",\"smer_vetra\",\"hitrost_vetra\",\"poraba\",\"vikend\",\"sezona\",\"tedenska_poraba\",\"vcerajsnja_poraba\"");
         sc.nextLine(); // remove head
         
         while (sc.hasNextLine()) {
             String[] curLine = sc.nextLine().split(",");
             Date date = format.parse(removeQuotations(curLine[0]));
 
-            Double sevenDayAvg = calcConsumptionAvg(Integer.parseInt(curLine[2]), Double.parseDouble(curLine[13]), date);
+            Double[] pastVals = calcPastConusmption(Integer.parseInt(curLine[2]), Double.parseDouble(curLine[13]), date);
             boolean isWeekend = isWeekend(date);
             String season = getSeason(date);
             int rain = Integer.parseInt(curLine[9]);
@@ -88,12 +103,13 @@ public class Parse {
 
             //if (sevenDayAvg == null) continue;
             writer.write(String.format(
-                "\n%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,\"%s\",%s",
+                "\n%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,\"%s\",%s,%s",
                 curLine[1],curLine[2],curLine[3],curLine[4],curLine[5],curLine[6],
                 curLine[7],curLine[8],rain,curLine[10],curLine[11],curLine[12],curLine[13],
                 isWeekend ? "1" : "0", 
                 season, 
-                sevenDayAvg != null ? sevenDayAvg : -1
+                pastVals[1] != null ? pastVals[1] : -1,
+                pastVals[0] != null ? pastVals[0] : -1
             ));
         }
         
