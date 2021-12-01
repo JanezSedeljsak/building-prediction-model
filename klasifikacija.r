@@ -60,7 +60,31 @@ predRF.prob <- predict(modelRF, test, type="prob")
 predKNN.prob <- predict(modelKNN, test, type="prob")
 predNB.prob <- predict(modelNB, test, type="prob")
 
-pred.prob <- predRF.prob * caRF + predKNN.prob * caKNN
-predClass <- colnames(pred.prob)[max.col(pred.prob)]
-predicted.prob <- factor(predClass, levels(train$namembnost))
-CA(test$namembnost, predicted.prob) # 0.5819398
+pred.prob <- predRF.prob + predKNN.prob
+predNamembnost <- colnames(pred.prob)[max.col(pred.prob)]
+predicted.prob <- factor(predNamembnost, levels(train$namembnost))
+CA(test$namembnost, predicted.prob) # 0.582107
+
+library(ipred)
+mymodel <- function(formula, data, target.model){CoreModel(formula, data, model=target.model)}
+mypredict <- function(object, newdata) {pred <- predict(object, newdata, type="class"); destroyModels(object); pred}
+mymodelKNN <- function(formula, data, valK){CoreModel(formula, data, model="knn", kInNN=valK)}
+
+res <- errorest(namembnost ~ ., train, model=mymodel, predict=mypredict, target.model="tree")
+caDT.cv <- 1 - res$error
+caDT.cv
+
+res <- errorest(namembnost ~ ., train, model=mymodel, predict=mypredict, target.model="rf")
+caRF.cv <- 1 - res$error
+caRF.cv
+
+res <- errorest(namembnost ~ ., train, model=mymodelKNN, predict=mypredict, valK=5)
+caKNN.cv <- 1 - res$error
+caKNN.cv
+
+# sedaj pri sestevanju napovedane verjetnosti utezimo s pricakovano tocnostjo modela
+predProb <- caDT.cv * predDT.prob + caRF.cv * predRF.prob + caKNN.cv * predKNN.prob
+predNamembnost <- colnames(predProb)[max.col(predProb)]
+predicted <- factor(predNamembnost, levels(train$namembnost))
+
+CA(test$namembnost, predicted) # 0.5114967
