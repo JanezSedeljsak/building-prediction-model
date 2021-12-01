@@ -139,12 +139,12 @@ CA(test$namembnost, predicted) # 0.5044526
 # Nakljucni gozd
 library(randomForest)
 
-train <- na.omit(train)
-test <- na.omit(test)
+rf_train <- na.omit(train)
+rf_test <- na.omit(test)
 
-rf <- randomForest(namembnost ~ ., train)
-predicted <- predict(rf, test, type="class")
-CA(test$namembnost, predicted) # 0.5286562
+rf <- randomForest(namembnost ~ ., rf_train)
+predicted <- predict(rf, rf_test, type="class")
+CA(rf_test$namembnost, predicted) # 0.536648
 
 # Boosting
 library(adabag)
@@ -154,4 +154,4 @@ predictions <- predict(bm, test)
 names(predictions)
 
 predicted <- predictions$class
-CA(test$namembnost, predicted)
+CA(test$namembnost, predicted) # 0.5125
