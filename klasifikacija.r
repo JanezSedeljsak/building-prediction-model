@@ -15,6 +15,15 @@ test <- readWithFactorize("test.txt")
 ##############################
 
 # Trivialen model
+getTrivialCA <- function(curTrain, curTest) {
+    tab <- table(curTrain$namembnost)
+    max_namembnost <- names(tab)[which.max(tab)]
+    predTrivial <- rep(max_namembnost, nrow(curTest))
+    namembnostModelStats(curTest$namembnost, predTrivial, T) # 0.47023
+}
+
+getTrivialCA(train, test)
+
 set.seed(0)
 tab <- table(train$namembnost)
 max_namembnost <- names(tab)[which.max(tab)]
@@ -89,3 +98,43 @@ namembnostModelStats(test$namembnost, predicted.prob, T)
 # 0.5862876 (predRF.prob * 0.558 + predKNN.prob + predKNNK.prob * 0.56)
 # 0.5900084 (predRF.prob * caRF + predKNN.prob * caKNN * 2)
 # 0.5725753 (predRF.prob + predKNN.prob)
+
+#####################################################
+# Učenje na ločenih regijah
+
+trainVzhod <- factorize(train[train$regija == "vzhodna",])
+trainZahod <- factorize(train[train$regija == "zahodna",])
+
+testVzhod <- factorize(test[test$regija == "vzhodna",])
+testZahod <- factorize(test[test$regija == "zahodna",])
+
+# Vzhod
+getTrivialCA(trainVzhod, testVzhod) # 0.51827182
+vModelBM <- boosting(namembnost ~ ., trainVzhod, mfinal=100)
+vModelKNN <- CoreModel(namembnost ~ ., trainVzhod, model="knn", kInNN = 5)
+vModelRF <- CoreModel(namembnost ~ ., trainVzhod, model="rf", selectionEstimator="MDL", binaryEvaluation=T)
+
+vPredBM <- predict(vModelBM, testVzhod)$class # Boosting
+namembnostModelStats(testVzhod$namembnost, vPredBM, T) # 0.7220522
+
+vPredRF <- predict(vModelRF, testVzhod, type="class") # Nakljucni gozd (implementacija 1)
+namembnostModelStats(testVzhod$namembnost, vPredRF, T) # 0.756795
+
+vPredKNN <- predict(vModelKNN, testVzhod, type="class") # K najblizjih sosedov
+namembnostModelStats(testVzhod$namembnost, vPredKNN, T) # 0.6462646
+
+
+# Zahod
+getTrivialCA(trainZahod, testZahod) # 0.42857142
+zModelBM <- boosting(namembnost ~ ., trainZahod, mfinal=100)
+zModelKNN <- CoreModel(namembnost ~ ., trainZahod, model="knn", kInNN = 5)
+zModelRF <- CoreModel(namembnost ~ ., trainZahod, model="rf", selectionEstimator="MDL", binaryEvaluation=T)
+
+zPredBM <- predict(zModelBM, testZahod)$class # Boosting
+namembnostModelStats(testZahod$namembnost, zPredBM, T) # 0.2395784
+
+zPredRF <- predict(zModelRF, testZahod, type="class") # Nakljucni gozd (implementacija 1)
+namembnostModelStats(testZahod$namembnost, zPredRF, T) # 0.3925839
+
+zPredKNN <- predict(zModelKNN, testZahod, type="class") # K najblizjih sosedov
+namembnostModelStats(testZahod$namembnost, zPredKNN, T) # 0.4451990
