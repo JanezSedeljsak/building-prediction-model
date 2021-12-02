@@ -61,3 +61,22 @@ rmse <- function(obs, pred, mean.val)
 {  
   sum((obs - pred)^2)/sum((obs - mean.val)^2)
 }
+
+myTrainFunc <- function(formula, traindata)
+{
+	rpart(formula, traindata)	
+}
+
+# Funkcija za pridobivanje napovedi modela (razredi)
+myPredictFunc <- function(model, testdata)
+{
+	predict(model, testdata, type="class")
+}
+
+
+
+# Atribute lahko izberemo glede na klasifikacijsko tocnost modela
+myEvalFunc <- function(predicted, observed, trained)
+{
+	1.0 - mean(observed == predicted)	
+}

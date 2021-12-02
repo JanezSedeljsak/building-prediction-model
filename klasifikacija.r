@@ -16,6 +16,7 @@ test <- readWithFactorize("test.txt")
 
 # Trivialen model
 getTrivialCA <- function(curTrain, curTest) {
+    set.seed(0)
     tab <- table(curTrain$namembnost)
     max_namembnost <- names(tab)[which.max(tab)]
     predTrivial <- rep(max_namembnost, nrow(curTest))
@@ -24,18 +25,17 @@ getTrivialCA <- function(curTrain, curTest) {
 
 getTrivialCA(train, test)
 
-set.seed(0)
-tab <- table(train$namembnost)
-max_namembnost <- names(tab)[which.max(tab)]
-predTrivial <- rep(max_namembnost, nrow(test))
-namembnostModelStats(test$namembnost, predTrivial, T) # 0.47023
-
 library(CORElearn)
 library(ipred)
 library(randomForest)
 library(adabag)
 
+source("wrapper.r")
 set.seed(0)
+
+# Wrapper ni izboljšal predikcije
+#wrapper(namembnost ~ ., train, myTrainFunc, myPredictFunc, myEvalFunc, cvfolds=10)
+
 modelDT <- CoreModel(namembnost ~ ., train, model="tree", selectionEstimator="MDL", binaryEvaluation=T)
 modelKNN <- CoreModel(namembnost ~ ., train, model="knn", kInNN = 5)
 modelRF <- CoreModel(namembnost ~ ., train, model="rf", selectionEstimator="MDL", binaryEvaluation=T)
@@ -49,55 +49,65 @@ modelBM <- boosting(namembnost ~ ., train, mfinal=100)
 
 # Evaluacije zgornjih modelov
 predNB <- predict(modelNB, test, type="class") # Naivni Bayes
-namembnostModelStats(test$namembnost, predNB, T) # 0.4448579
+namembnostModelStats(test$namembnost, predNB, T) # 0.4448578
 
 predDT <- predict(modelDT, test, type="class") # Odlocitveno drevo
-namembnostModelStats(test$namembnost, predDT, T) # 0.4884197
+namembnostModelStats(test$namembnost, predDT, T) # 0.488419
+plot(modelDT, train, type=5)
 
 predBM <- predict(modelBM, test)$class # Boosting
-namembnostModelStats(test$namembnost, predBM, T) # 0.50618
+namembnostModelStats(test$namembnost, predBM, T) # 0.501546
 
 predRF2 <- predict(modelRF2, na.omit(test), type="class") # Nakljucni gozd (implementacija 2) - brez NA vrednosti
-namembnostModelStats(na.omit(test)$namembnost, predRF2, T) # 0.5418426761
+namembnostModelStats(na.omit(test)$namembnost, predRF2, T) # 0.542527685
 
-predBAG <- predict(modelBAG, test, type="class") # Bagging
-namembnostModelStats(test$namembnost, predBAG, T) # 0.5328177s
+predBAG <- predict(modelBAG, test)$class # Bagging
+namembnostModelStats(test$namembnost, predBAG, T) # 0.5200668
 
 predRFN <- predict(modelRFN, test, type="class") # Nakljucni gozd z utezenostjo
-namembnostModelStats(test$namembnost, predRFN, T) # 0.5585284
+namembnostModelStats(test$namembnost, predRFN, T) # 0.5605769230
 
 predKNNK <- predict(modelKNNK, test, type="class") # K najblizjih sosedov z utezmi
-namembnostModelStats(test$namembnost, predKNNK, T) # 0.55928093
+namembnostModelStats(test$namembnost, predKNNK, T) # 0.562249163
 
 predRF <- predict(modelRF, test, type="class") # Nakljucni gozd (implementacija 1)
-namembnostModelStats(test$namembnost, predRF, T) # 0.5585702
+namembnostModelStats(test$namembnost, predRF, T) # 0.55974080267
 
 predKNN <- predict(modelKNN, test, type="class") # K najblizjih sosedov
-namembnostModelStats(test$namembnost, predKNN, T) # 0.5756271
-
+namembnostModelStats(test$namembnost, predKNN, T) # 0.57830267
 
 # Glasovanje
-pred <- data.frame(predRF, predKNN, predictedBM, predDT)
+pred <- data.frame(predRFN, predKNN, predDT, predBM)
 head(pred)
 
 predNamembnost <- voting(pred)
 predicted <- as.factor(predNamembnost)
-namembnostModelStats(test$namembnost, predicted, T) # 0.5980769230769
+CA(test$namembnost, predicted) # 0.59765886
 
 # Utezeno glasovanje
 predDT.prob <- predict(modelDT, test, type="prob")
 predRF.prob <- predict(modelRF, test, type="prob")
+predRFN.prob <- predict(modelRFN, test, type="prob")
 predKNN.prob <- predict(modelKNN, test, type="prob")
 predBM.prob <- predict(modelBM, test)[[3]]
+predBAG.prob <- predict(modelBAG, test)[[3]]
 predKNNK.prob <- predict(modelKNNK, test, type="prob")
 
-pred.prob <- predRF.prob + predKNN.prob
+pred.prob <- predRF.prob + predKNN.prob + predKNNK.prob 
 predNamembnost <- colnames(pred.prob)[max.col(pred.prob)]
 predicted.prob <- factor(predNamembnost, NAMEMBNOST_LEVELS)
-namembnostModelStats(test$namembnost, predicted.prob, T)
-# 0.5862876 (predRF.prob * 0.558 + predKNN.prob + predKNNK.prob * 0.56)
-# 0.5900084 (predRF.prob * caRF + predKNN.prob * caKNN * 2)
-# 0.5725753 (predRF.prob + predKNN.prob)
+namembnostModelStats(test$namembnost, predicted.prob, T) # 0.58641304
+
+addAccuracy <- function(actual, prob, pred) {
+    prob * CA(actual, pred)
+}
+
+pred.prob <- addAccuracy(test$namembnost, predRF.prob, predRF) + addAccuracy(test$namembnost, predKNN.prob, predKNN) + 
+    addAccuracy(test$namembnost, predKNNK.prob, predKNNK)
+
+predNamembnost <- colnames(pred.prob)[max.col(pred.prob)]
+predicted.prob <- factor(predNamembnost, NAMEMBNOST_LEVELS)
+namembnostModelStats(test$namembnost, predicted.prob, T) # 0.586872909
 
 #####################################################
 # Učenje na ločenih regijah
