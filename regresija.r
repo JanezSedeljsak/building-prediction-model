@@ -253,7 +253,6 @@ mae(observed, predicted)                       # 15.65017
 # KOMBINIRANO UČENJE #
 ######################
 
-
 #####################################
 # Bagging z uporabo random forest-a #
 #####################################
@@ -295,6 +294,111 @@ model <- gbm(poraba ~ ., train, distribution = "gaussian", n.trees = 6000, inter
 predicted <- predict(model, test)
 rmse(observed, predicted, mean(train$poraba))  # 0.05222664
 mae(observed, predicted)                       # 17.32126
+
+
+
+
+#########################################################
+# PRIMERJANJE USPEŠNOSTI GLEDE NA PODATKE IZ OBEH REGIJ #
+#########################################################
+
+# razdelimo podatke na eno n drugo regijo
+trainVzhod <- train[train$regija == "vzhodna",]
+trainZahod <- train[train$regija == "zahodna",]
+
+testVzhod <- train[test$regija == "vzhodna",]
+testZahod <- train[test$regija == "zahodna",]
+
+trainVzhod[trainVzhod$namembnost] <- factor(trainVzhod$namembnost, levels=c("izobrazevalna", "javno_storitvena", "kulturno_razvedrilna", "poslovna", "stanovanjska"))
+
+nrow(trainVzhod)
+nrow(trainZahod)
+
+summary(trainVzhod$poraba)
+summary(trainZahod$poraba)
+
+
+######
+# lm #
+######
+
+#vzhod
+set.seed(0)
+model <- lm(poraba ~ vcerajsnja_poraba + tedenska_poraba, trainVzhod)
+predicted <- predict(model, test)
+rmse(observed, predicted, mean(trainVzhod$poraba)) # 0.05071341
+mae(observed, predicted)                           # 17.59993
+
+#Zahod
+set.seed(0)
+model <- lm(poraba ~ vcerajsnja_poraba + tedenska_poraba, trainZahod)
+predicted <- predict(model, test)
+rmse(observed, predicted, mean(trainZahod$poraba)) # 0.06143067
+mae(observed, predicted)                           # 17.2308
+
+
+#######
+# svm #
+#######
+
+# Vzhod
+library(e1071)
+
+set.seed(0)
+svm.model <- svm(poraba ~ ., trainVzhod)
+predicted <- predict(svm.model, test)
+rmse(observed, predicted, mean(trainVzhod$poraba))  # 0.3278731
+mae(observed, predicted)                            # 52.91783
+
+# Zahod
+set.seed(0)
+svm.model <- svm(poraba ~ ., trainZahod)
+predicted <- predict(svm.model, test)
+rmse(observed, predicted, mean(trainZahod$poraba))  # 0.3421638
+mae(observed, predicted)                            # 56.7277
+
+
+#######
+# knn #
+#######
+library(kknn)
+
+# Vzhod
+set.seed(0)
+knn.model <- kknn(poraba ~ vcerajsnja_poraba + tedenska_poraba + vikend, trainVzhod, test, k = 10)
+predicted <- fitted(knn.model)
+rmse(observed, predicted, mean(trainVzhod$poraba))  # 0.04350551
+mae(observed, predicted)                            # 17.90143
+
+# Zahod
+set.seed(0)
+knn.model <- kknn(poraba ~ vcerajsnja_poraba + tedenska_poraba + vikend, trainZahod, test, k = 10)
+predicted <- fitted(knn.model)
+rmse(observed, predicted, mean(trainZahod$poraba))  # 0.07405788
+mae(observed, predicted)                            # 18.92493
+
+
+
+
+myTrainFuncReg <- function(formula, traindata)
+{
+  lm(formula, traindata)
+}
+wrapper(poraba ~ ., trainVzhod, myTrainFuncReg, myPredictFuncReg, myEvalFuncRMSE, cvfolds=10)
+
+set.seed(0)
+model <- lm(poraba ~ tedenska_poraba + vcerajsnja_poraba + vikend + povrsina + oblacnost + sezona + temp_zraka + padavine + namembnost + hitrost_vetra + temp_rosisca, trainVzhod)
+predicted <- predict(model, test)
+rmse(observed, predicted, mean(trainVzhod$poraba)) # 0.05071341
+mae(observed, predicted)                           # 17.59993
+
+
+wrapper(poraba ~ ., trainZahod, myTrainFuncReg, myPredictFuncReg, myEvalFuncRMSE, cvfolds=10)
+set.seed(0)
+model <- lm( poraba ~ vcerajsnja_poraba + tedenska_poraba + vikend + hitrost_vetra + temp_zraka + sezona + pritisk + smer_vetra, trainZahod)
+predicted <- predict(model, test)
+rmse(observed, predicted, mean(trainZahod$poraba)) # 0.05833437
+mae(observed, predicted)                           # 17.13383
 
 
 
