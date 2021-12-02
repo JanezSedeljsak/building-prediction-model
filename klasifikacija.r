@@ -146,11 +146,32 @@ allData <- rbind(train, test)
 tmpTrain <- allData[allData$mesec == 1, ]
 tmpTest <- allData[allData$mesec == 2, ]
 
+bayesPredictions <- c()
+rfPredictions <- c()
 
 for (m in seq(2, 12, 1)) {
-    curModel <- CoreModel(namembnost ~ ., tmpTrain, model="rf", selectionEstimator="MDL")
-    curPred <- predict(curModel, tmpTest, type="class")
-    print(paste(paste("Testiranje v mesecu: ", m), paste(" ", CA(tmpTest$namembnost, curPred))))
+    curModelRF <- CoreModel(namembnost ~ ., tmpTrain, model="rf")
+    curModelBayes <- CoreModel(namembnost ~ ., tmpTrain, model="bayes")
+
+    curPredRF <- predict(curModelRF, tmpTest, type="class")
+    curPredBayes <- predict(curModelBayes, tmpTest, type="class")
+
+    bayesPredictions[m] <- CA(tmpTest$namembnost, curPredBayes)
+    rfPredictions[m] <- CA(tmpTest$namembnost, curPredRF)
+
+    print(paste("Testiranje v mesecu: ", m))
+    print(paste("Bayes:          ", bayesPredictions[m]))
+    print(paste("Naključni gozd: ", rfPredictions[m]))
+
     tmpTrain <- rbind(tmpTrain, tmpTest)
     tmpTest <- allData[allData$mesec == m + 1, ]
 }
+
+plot(x=1:12, y=rfPredictions, type="l", lty=1, ylim=c(0,1), 
+    bty="n", main="Napredek učenja z postopnim dodajanjem",
+    xlab="Mesec", ylab="Klasifikacijska natančnost", col="blue",
+    sub="Rdeča - Bayes, Modra - Naključni gozd")
+
+lines(x=1:12, y=bayesPredictions, lty=1, col="red")
+
+
