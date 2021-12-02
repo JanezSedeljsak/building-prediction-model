@@ -138,3 +138,19 @@ namembnostModelStats(testZahod$namembnost, zPredRF, T) # 0.3925839
 
 zPredKNN <- predict(zModelKNN, testZahod, type="class") # K najblizjih sosedov
 namembnostModelStats(testZahod$namembnost, zPredKNN, T) # 0.4451990
+
+#########################################
+# Razdelitev po mesecih
+
+allData <- rbind(train, test)
+tmpTrain <- allData[allData$mesec == 1, ]
+tmpTest <- allData[allData$mesec == 2, ]
+
+
+for (m in seq(2, 12, 1)) {
+    curModel <- CoreModel(namembnost ~ ., tmpTrain, model="rf", selectionEstimator="MDL")
+    curPred <- predict(curModel, tmpTest, type="class")
+    print(paste(paste("Testiranje v mesecu: ", m), paste(" ", CA(tmpTest$namembnost, curPred))))
+    tmpTrain <- rbind(tmpTrain, tmpTest)
+    tmpTest <- allData[allData$mesec == m + 1, ]
+}

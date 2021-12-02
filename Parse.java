@@ -25,6 +25,12 @@ public class Parse {
         return day == Calendar.SATURDAY || day == Calendar.SUNDAY;
     }
 
+    static int getMonth(Date d) {
+        cal.setTime(d);
+        int month = cal.get(Calendar.MONTH);
+        return month + 1;
+    }
+
     static String removeQuotations(String str) {
         return str.substring(1, str.length()-1);
     }
@@ -88,7 +94,7 @@ public class Parse {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd");
         FileInputStream fis = new FileInputStream(file);
         Scanner sc = new Scanner(fis);
-        writer.write("\"regija\",\"stavba\",\"namembnost\",\"povrsina\",\"leto_izgradnje\",\"temp_zraka\",\"temp_rosisca\",\"oblacnost\",\"padavine\",\"pritisk\",\"smer_vetra\",\"hitrost_vetra\",\"poraba\",\"vikend\",\"sezona\",\"tedenska_poraba\",\"vcerajsnja_poraba\"");
+        writer.write("\"regija\",\"stavba\",\"namembnost\",\"povrsina\",\"leto_izgradnje\",\"temp_zraka\",\"temp_rosisca\",\"oblacnost\",\"padavine\",\"pritisk\",\"smer_vetra\",\"hitrost_vetra\",\"poraba\",\"vikend\",\"sezona\",\"tedenska_poraba\",\"vcerajsnja_poraba\",\"mesec\"");
         sc.nextLine(); // remove head
         
         while (sc.hasNextLine()) {
@@ -98,18 +104,21 @@ public class Parse {
             Double[] pastVals = calcPastConusmption(Integer.parseInt(curLine[2]), Double.parseDouble(curLine[13]), date);
             boolean isWeekend = isWeekend(date);
             String season = getSeason(date);
+            int month = getMonth(date);
+            
             int rain = Integer.parseInt(curLine[9]);
             if (rain == -1) rain = 1;
 
             //if (sevenDayAvg == null) continue;
             writer.write(String.format(
-                "\n%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,\"%s\",%s,%s",
+                "\n%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,\"%s\",%s,%s,%s",
                 curLine[1],curLine[2],curLine[3],curLine[4],curLine[5],curLine[6],
                 curLine[7],curLine[8],rain,curLine[10],curLine[11],curLine[12],curLine[13],
                 isWeekend ? "1" : "0", 
                 season, 
                 pastVals[1] != null ? pastVals[1] : -1,
-                pastVals[0] != null ? pastVals[0] : -1
+                pastVals[0] != null ? pastVals[0] : -1,
+                month
             ));
         }
         

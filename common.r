@@ -7,14 +7,12 @@ CA <- function(obs, pred) {
 
 voting <- function(predictions) {
 	res <- vector()
-
-  	for (i in 1 : nrow(predictions))  	
-	{
+  for (i in 1 : nrow(predictions)) {
 		vec <- unlist(predictions[i,])
-    	res[i] <- names(which.max(table(vec)))
-  	}
+    res[i] <- names(which.max(table(vec)))
+  }
 
-  	res
+  res
 }
 
 namembnostModelStats <- function(actual, predicted, onlyCA=F) {
@@ -30,6 +28,7 @@ factorize <- function (data) {
     data$regija <- as.factor(data$regija)
     data$oblacnost <- factor(data$oblacnost, levels=seq(0,10,1))
     data$vikend <- as.factor(data$vikend)
+    data$mesec <- factor(data$mesec, levels=seq(1,12,1))
     data$tedenska_poraba[data$tedenska_poraba == -1] <- NA
     data$vcerajsnja_poraba[data$vcerajsnja_poraba == -1] <- NA
     data
