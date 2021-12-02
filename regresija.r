@@ -168,19 +168,9 @@ mae(observed, predicted)                       # 19.69517
 
 
 
-###########################
-# random forest
-###########################
-library(randomForest)
-
-model <- randomForest(poraba ~ ., train)
-predicted <- predict(model, test)
-rmse(observed, predicted, mean(train$poraba))  # 0.05821984
-mae(observed, predicted)                       # 21.67558
-
-########################
-# svm
-########################
+################################
+# Support-vector machine - svm #
+################################
 library(e1071)
 
 set.seed(0)
@@ -254,5 +244,59 @@ knn.model <- kknn(poraba ~ vcerajsnja_poraba + tedenska_poraba + vikend, train, 
 predicted <- fitted(knn.model)
 rmse(observed, predicted, mean(train$poraba))  # 0.04334001
 mae(observed, predicted)                       # 15.65017
+
+
+
+
+
+######################
+# KOMBINIRANO UČENJE #
+######################
+
+
+#####################################
+# Bagging z uporabo random forest-a #
+#####################################
+library(randomForest)
+
+set.seed(0)
+model <- randomForest(poraba ~ ., train, mtry=17)
+predicted <- predict(model, test)
+rmse(observed, predicted, mean(train$poraba))  # 0.05821984
+mae(observed, predicted)                       # 21.67558
+
+
+############################################################
+# Boosting z Generalized Boosted Regression Modeling (GBM) #
+############################################################
+
+#install.packages("gbm")
+library(gbm)
+set.seed(0)
+model <- gbm(poraba ~ ., train, distribution = "gaussian", n.trees = 5000, interaction.depth = 4, shrinkage = 0.01)
+predicted <- predict(model, test)
+rmse(observed, predicted, mean(train$poraba))  # 0.0598647
+mae(observed, predicted)                       # 19.66564
+
+set.seed(0)
+model <- gbm(poraba ~ ., train, distribution = "gaussian", n.trees = 100, interaction.depth = 8, shrinkage = 0.1)
+predicted <- predict(model, test)
+rmse(observed, predicted, mean(train$poraba))  # 0.05337431
+mae(observed, predicted)                       # 19.01418
+
+set.seed(0)
+model <- gbm(poraba ~ ., train, distribution = "gaussian", n.trees = 1000, interaction.depth = 8, shrinkage = 0.01)
+predicted <- predict(model, test)
+rmse(observed, predicted, mean(train$poraba))  # 0.05253253
+mae(observed, predicted)                       # 18.09985
+
+set.seed(0)
+model <- gbm(poraba ~ ., train, distribution = "gaussian", n.trees = 6000, interaction.depth = 8, shrinkage = 0.001)
+predicted <- predict(model, test)
+rmse(observed, predicted, mean(train$poraba))  # 0.05222664
+mae(observed, predicted)                       # 17.32126
+
+
+
 
 
