@@ -80,6 +80,27 @@ hist(log1p(train$hitrost_vetra))
 hist(log1p(train$poraba))
 hist(log1p(train$povrsina))
 
+# Pomembnost atribuiov za namembnost
+#install.packages('Boruta')
+library(Boruta)
+
+boruta_output <- Boruta(namembnost ~ ., data=na.omit(train), doTrace=0)
+boruta_signif <- getSelectedAttributes(boruta_output, withTentative = TRUE)
+roughFixMod <- TentativeRoughFix(boruta_output)
+boruta_signif <- getSelectedAttributes(roughFixMod)
+
+imps <- attStats(roughFixMod)
+imps2 <- imps[imps$decision != 'Rejected', c('meanImp', 'decision')]
+head(imps2[order(-imps2$meanImp), ])  # descending sort
+plot(boruta_output, cex.axis=.7, las=2, xlab="", main="Pomemnbost atributov")
+#povrsina          86.918824
+#leto_izgradnje    79.447450
+#stavba            72.521620
+#tedenska_poraba   51.450802
+#poraba            40.105688
+#vcerajsnja_poraba 39.392232
+#regija            29.759865
+#temp_zraka        20.391996
 
 #po_letih <- table(train$leto_izgradnje)
 #po_letih_iz <- po_letih

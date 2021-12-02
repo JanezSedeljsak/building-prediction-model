@@ -1,3 +1,5 @@
+NAMEMBNOST_LEVELS <- c("izobrazevalna", "javno_storitvena", "kulturno_razvedrilna", "poslovna", "stanovanjska")
+
 CA <- function(obs, pred) {
 	tab <- table(obs, pred)
 	sum(diag(tab)) / sum(tab)
@@ -15,8 +17,15 @@ voting <- function(predictions) {
   	res
 }
 
+namembnostModelStats <- function(actual, predicted, onlyCA=F) {
+  print(paste("CA: ", paste(" ", CA(actual, predicted))))
+  if (onlyCA != T) {
+    confusionMatrix(factor(predicted, levels=NAMEMBNOST_LEVELS), actual)
+  }
+}
+
 factorize <- function (data) {
-    data$namembnost <- factor(data$namembnost, levels=c("izobrazevalna", "javno_storitvena", "kulturno_razvedrilna", "poslovna", "stanovanjska"))
+    data$namembnost <- factor(data$namembnost, levels=NAMEMBNOST_LEVELS)
     data$sezona <- factor(data$sezona, levels=c("zima", "spomlad", "poletje", "jesen"))
     data$regija <- as.factor(data$regija)
     data$oblacnost <- factor(data$oblacnost, levels=seq(0,10,1))
