@@ -38,7 +38,7 @@ public class Parse {
     static String getSeason(Date d) {
         cal.setTime(d);
         int day = cal.get(Calendar.DAY_OF_YEAR);
-        if (day < 81 || day > 355) return "zima";
+        if (day < 81 || day > 345) return "zima";
         if (day < 173) return "spomlad";
         if (day < 267) return "poletje";
         return "jesen";
