@@ -34,6 +34,8 @@ paste(names(sort(attrEval(poraba ~ ., train, "RReliefFequalK"), decreasing = TRU
 # vcerajsnja_poraba + tedenska_poraba + povrsina + leto_izgradnje + stavba + namembnost + hitrost_vetra
 paste(names(sort(attrEval(poraba ~ ., train, "RReliefFbestK"), decreasing = TRUE)), collapse = ' + ')
 
+########
+
 # vikend + vcerajsnja_poraba + temp_rosisca + temp_zraka + tedenska_poraba + oblacnost + smer_vetra
 paste(names(sort(attrEval(poraba ~ ., train, "MSEofModel"), decreasing = TRUE)), collapse = ' + ')
 
@@ -306,17 +308,13 @@ mae(observed, predicted)                       # 17.32126
 trainVzhod <- train[train$regija == "vzhodna",]
 trainZahod <- train[train$regija == "zahodna",]
 
-testVzhod <- train[test$regija == "vzhodna",]
-testZahod <- train[test$regija == "zahodna",]
+trainVzhod <- levels()
 
-trainVzhod[trainVzhod$namembnost] <- factor(trainVzhod$namembnost, levels=c("izobrazevalna", "javno_storitvena", "kulturno_razvedrilna", "poslovna", "stanovanjska"))
+testVzhod <- test[test$regija == "vzhodna",]
+testZahod <- test[test$regija == "zahodna",]
 
-nrow(trainVzhod)
-nrow(trainZahod)
-
-summary(trainVzhod$poraba)
-summary(trainZahod$poraba)
-
+observedVzhod <- testVzhod$poraba
+observedZahod <- testZahod$poraba
 
 ######
 # lm #
@@ -325,37 +323,37 @@ summary(trainZahod$poraba)
 #vzhod
 set.seed(0)
 model <- lm(poraba ~ vcerajsnja_poraba + tedenska_poraba, trainVzhod)
-predicted <- predict(model, test)
-rmse(observed, predicted, mean(trainVzhod$poraba)) # 0.05071341
-mae(observed, predicted)                           # 17.59993
+predicted <- predict(model, testVzhod)
+rmse(observedVzhod, predicted, mean(trainVzhod$poraba)) # 0.07113724
+mae(observedVzhod, predicted)                           # 24.56143
 
 #Zahod
 set.seed(0)
 model <- lm(poraba ~ vcerajsnja_poraba + tedenska_poraba, trainZahod)
-predicted <- predict(model, test)
-rmse(observed, predicted, mean(trainZahod$poraba)) # 0.06143067
-mae(observed, predicted)                           # 17.2308
+predicted <- predict(model, testZahod)
+rmse(observedZahod, predicted, mean(trainZahod$poraba)) # 0.02711596
+mae(observedZahod, predicted)                           # 12.68869
 
 
 #######
 # svm #
 #######
 
-# Vzhod
 library(e1071)
 
+#vzhod
 set.seed(0)
 svm.model <- svm(poraba ~ ., trainVzhod)
-predicted <- predict(svm.model, test)
-rmse(observed, predicted, mean(trainVzhod$poraba))  # 0.3278731
-mae(observed, predicted)                            # 52.91783
+predicted <- predict(svm.model, testVzhod)
+rmse(observedVzhod, predicted, mean(trainVzhod$poraba)) # 0.05861002
+mae(observedVzhod, predicted)                           # 26.40473
 
-# Zahod
+#Zahod
 set.seed(0)
 svm.model <- svm(poraba ~ ., trainZahod)
-predicted <- predict(svm.model, test)
-rmse(observed, predicted, mean(trainZahod$poraba))  # 0.3421638
-mae(observed, predicted)                            # 56.7277
+predicted <- predict(model, testZahod)
+rmse(observedZahod, predicted, mean(trainZahod$poraba)) # 0.02711596
+mae(observedZahod, predicted)                           # 12.68869
 
 
 #######
@@ -363,44 +361,59 @@ mae(observed, predicted)                            # 56.7277
 #######
 library(kknn)
 
-# Vzhod
+#vzhod
 set.seed(0)
-knn.model <- kknn(poraba ~ vcerajsnja_poraba + tedenska_poraba + vikend, trainVzhod, test, k = 10)
+knn.model <- kknn(poraba ~ vcerajsnja_poraba + tedenska_poraba + vikend, trainVzhod, testVzhod, k = 10)
 predicted <- fitted(knn.model)
-rmse(observed, predicted, mean(trainVzhod$poraba))  # 0.04350551
-mae(observed, predicted)                            # 17.90143
+rmse(observedVzhod, predicted, mean(trainVzhod$poraba)) # 0.05317498
+mae(observedVzhod, predicted)                           # 21.06857
 
-# Zahod
+#Zahod
 set.seed(0)
-knn.model <- kknn(poraba ~ vcerajsnja_poraba + tedenska_poraba + vikend, trainZahod, test, k = 10)
+knn.model <- kknn(poraba ~ vcerajsnja_poraba + tedenska_poraba + vikend, trainZahod, testZahod, k = 10)
 predicted <- fitted(knn.model)
-rmse(observed, predicted, mean(trainZahod$poraba))  # 0.07405788
-mae(observed, predicted)                            # 18.92493
+rmse(observedZahod, predicted, mean(trainZahod$poraba)) # 0.0300223
+mae(observedZahod, predicted)                           # 13.8744
+
+
+# Opazimo, da podatki, ki so v Zahodni množici, bolj prispevajo k natančnosti modela
 
 
 
+#########################
+# Razdelitev po mesecih #
+#########################
 
-myTrainFuncReg <- function(formula, traindata)
-{
-  lm(formula, traindata)
+allData <- rbind(train, test)
+tmpTrain <- allData[allData$mesec == 1, ]
+tmpTest <- allData[allData$mesec == 2, ]
+
+lmPredictions <- c()
+svmPredictions <- c()
+
+for (m in seq(2, 12, 1)) {
+  curModelLm <- lm(poraba ~ vcerajsnja_poraba + tedenska_poraba + vikend, tmpTrain)
+  curModelSVM <- svm(poraba ~ vcerajsnja_poraba + tedenska_poraba + vikend, tmpTrain)
+  
+  curPredLm <- predict(curModelLm, tmpTest)
+  curPredSVM <- predict(curModelSVM, tmpTest)
+  
+  lmPredictions[m] <- rmse(observed, curPredLm, mean(train$poraba))
+  svmPredictions[m] <- rmse(observed, curPredSVM, mean(train$poraba))
+  
+  print(paste("Testiranje v mesecu: ", m))
+  print(paste("Linear model:           ", lmPredictions[m]))
+  print(paste("Support-vector machine: ", svmPredictions[m]))
+  
+  tmpTrain <- rbind(tmpTrain, tmpTest)
+  tmpTest <- allData[allData$mesec == m + 1, ]
 }
-wrapper(poraba ~ ., trainVzhod, myTrainFuncReg, myPredictFuncReg, myEvalFuncRMSE, cvfolds=10)
 
-set.seed(0)
-model <- lm(poraba ~ tedenska_poraba + vcerajsnja_poraba + vikend + povrsina + oblacnost + sezona + temp_zraka + padavine + namembnost + hitrost_vetra + temp_rosisca, trainVzhod)
-predicted <- predict(model, test)
-rmse(observed, predicted, mean(trainVzhod$poraba)) # 0.05071341
-mae(observed, predicted)                           # 17.59993
+plot(x=1:12, y=svmPredictions, type="l", lty=1, ylim=c(0,4), 
+     bty="n", main="Napredek učenja z postopnim dodajanjem",
+     xlab="Mesec", ylab="RMSE (manj je bolje)", col="blue",
+     sub="Rdeča - LM, Modra - SVM")
 
-
-wrapper(poraba ~ ., trainZahod, myTrainFuncReg, myPredictFuncReg, myEvalFuncRMSE, cvfolds=10)
-set.seed(0)
-model <- lm( poraba ~ vcerajsnja_poraba + tedenska_poraba + vikend + hitrost_vetra + temp_zraka + sezona + pritisk + smer_vetra, trainZahod)
-predicted <- predict(model, test)
-rmse(observed, predicted, mean(trainZahod$poraba)) # 0.05833437
-mae(observed, predicted)                           # 17.13383
-
-
-
+lines(x=1:12, y=lmPredictions, lty=1, col="red")
 
 
