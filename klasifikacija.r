@@ -53,6 +53,20 @@ dt3 <- CoreModel(namembnost ~ povrsina + regija + stavba + leto_izgradnje + temp
 # ReliefFequalK top 6
 dt4 <- CoreModel(namembnost ~ leto_izgradnje + stavba + povrsina + poraba + regija + tedenska_poraba, train, model="tree")
 
+######################
+# Graf najboljših atributov
+evalING <- attrEval(namembnost ~ ., test, "InfGain")
+evalGIN <- attrEval(namembnost ~ ., test, "Gini")
+evalMDL <- attrEval(namembnost ~ ., test, "MDL")
+evalREK <- attrEval(namembnost ~ ., test, "ReliefFequalK")
+
+
+library(RColorBrewer)
+coul <- brewer.pal(4, "Set3")
+allEvals <- rbind(evalING, evalGIN, evalMDL, evalREK)
+barplot(allEvals, beside=T, cex.names=0.7, col=coul)
+legend("top", c("InfGain", "Gini", "MDL", "ReliefFequalK"), cex=0.9, fill=coul)
+
 
 predDT1 <- predict(dt1, test, type="class")
 namembnostModelStats(test$namembnost, predNB, T) # 0.445150
