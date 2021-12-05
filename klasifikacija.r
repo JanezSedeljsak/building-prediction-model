@@ -35,6 +35,41 @@ library(adabag)
 source("wrapper.r")
 set.seed(0)
 
+# Ocenjevanje atributov nad drevesom in izrisi
+sort(attrEval(namembnost ~ ., train, "InfGain"), decreasing = T)
+sort(attrEval(namembnost ~ ., train, "Gini"), decreasing = T)
+sort(attrEval(namembnost ~ ., train, "MDL"), decreasing = T)
+sort(attrEval(namembnost ~ ., train, "ReliefFequalK"), decreasing = T)
+
+# InfGain top 3
+dt1 <- CoreModel(namembnost ~ povrsina + regija + stavba, train, model="tree")
+
+# Gini top 4
+dt2 <- CoreModel(namembnost ~ povrsina + leto_izgradnje + regija + stavba, train, model="tree")
+
+# Mdl top 5
+dt3 <- CoreModel(namembnost ~ povrsina + regija + stavba + leto_izgradnje + temp_zraka, train, model="tree")
+
+# ReliefFequalK top 6
+dt4 <- CoreModel(namembnost ~ leto_izgradnje + stavba + povrsina + poraba + regija + tedenska_poraba, train, model="tree")
+
+
+predDT1 <- predict(dt1, test, type="class")
+namembnostModelStats(test$namembnost, predNB, T) # 0.445150
+plot(dt1, train, type=5)
+
+predDT2 <- predict(dt2, test, type="class")
+namembnostModelStats(test$namembnost, predNB, T) # 0.4451505
+plot(dt2, train, type=5)
+
+predDT3 <- predict(dt3, test, type="class")
+namembnostModelStats(test$namembnost, predNB, T) # 0.445150
+plot(dt3, train, type=5)
+
+predDT4 <- predict(dt4, test, type="class")
+namembnostModelStats(test$namembnost, predNB, T) # 0.445150
+plot(dt4, train, type=5)
+
 # Wrapper ni izboljšal predikcije
 #wrapper(namembnost ~ ., train, myTrainFunc, myPredictFunc, myEvalFunc, cvfolds=10)
 
@@ -55,7 +90,6 @@ namembnostModelStats(test$namembnost, predNB, T) # 0.4448578
 
 predDT <- predict(modelDT, test, type="class") # Odlocitveno drevo
 namembnostModelStats(test$namembnost, predDT, T) # 0.488419
-plot(modelDT, train, type=5)
 
 predBM <- predict(modelBM, test)$class # Boosting
 namembnostModelStats(test$namembnost, predBM, T) # 0.501546
