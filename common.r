@@ -15,9 +15,14 @@ voting <- function(predictions) {
   res
 }
 
-namembnostModelStats <- function(actual, predicted, onlyCA=F) {
-  print(paste("CA: ", paste(" ", CA(actual, predicted))))
-  if (onlyCA != T) {
+brier.score <- function(obsMat, predMat)
+{
+	sum((obsMat - predMat) ^ 2) / nrow(predMat)
+}
+
+namembnostModelStats <- function(actual, predicted, ignoreMatrix=F) {
+  print(paste("CA:    ", paste(" ", CA(actual, predicted))))
+  if (ignoreMatrix != T) {
     confusionMatrix(factor(predicted, levels=NAMEMBNOST_LEVELS), actual)
   }
 }

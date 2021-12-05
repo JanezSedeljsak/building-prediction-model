@@ -5,10 +5,12 @@ setwd("D:\\ai-heating-consumption")
 # 
 #install.packages("caret")
 library(caret)
+library(nnet)
 source("common.r") 
 
 train <- readWithFactorize("ucna.txt")
 test <- readWithFactorize("test.txt")
+namembnostMatrix <- class.ind(test$namembnost)
 
 ##############################
 #        Klasifikacija       #
@@ -92,6 +94,11 @@ predKNN.prob <- predict(modelKNN, test, type="prob")
 predBM.prob <- predict(modelBM, test)[[3]]
 predBAG.prob <- predict(modelBAG, test)[[3]]
 predKNNK.prob <- predict(modelKNNK, test, type="prob")
+
+print(paste("Brier DT:  ", paste(" ", brier.score(namembnostMatrix, predDT.prob)))) # 1.023160535117
+print(paste("Brier RF:  ", paste(" ", brier.score(namembnostMatrix, predRF.prob)))) # 0.6553150753013
+print(paste("Brier KNN: ", paste(" ", brier.score(namembnostMatrix, predKNN.prob)))) # 0.657498327759
+print(paste("Brier BAG: ", paste(" ", brier.score(namembnostMatrix, predBAG.prob)))) # 0.892684824
 
 pred.prob <- predRF.prob + predKNN.prob + predKNNK.prob 
 predNamembnost <- colnames(pred.prob)[max.col(pred.prob)]
