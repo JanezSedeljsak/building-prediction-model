@@ -92,7 +92,7 @@ boruta_signif <- getSelectedAttributes(roughFixMod)
 imps <- attStats(roughFixMod)
 imps2 <- imps[imps$decision != 'Rejected', c('meanImp', 'decision')]
 head(imps2[order(-imps2$meanImp), ])  # descending sort
-plot(boruta_output, cex.axis=.7, las=2, xlab="", main="Pomemnbost atributov")
+plot(boruta_output, cex.axis=.7, las=2, xlab="", ylab="Pomembnost", main="Pomemnbost atributov")
 #povrsina          86.918824
 #leto_izgradnje    79.447450
 #stavba            72.521620
